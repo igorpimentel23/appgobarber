@@ -4,14 +4,10 @@ import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
 import { useToast } from '../../hooks/toast';
-import Icon from 'react-native-vector-icons/Feather';
+import Header from '../../components/Header';
 
 import {
   Container,
-  Header,
-  BackButton,
-  HeaderTitle,
-  UserAvatar,
   ProvidersListContainer,
   ProvidersList,
   ProviderContainer,
@@ -31,11 +27,13 @@ import {
   CreateAppointmentButton,
   CreateAppointmentButtonText,
 } from './styles';
-import { useAuth } from '../../hooks/Auth';
 import api from '../../services/api';
+import NavBar from '../../components/NavBar';
 
 interface RouteParams {
   providerId: string;
+  appointmentId?: string;
+  type: 'create' | 'update' | 'delete';
 }
 
 export interface Provider {
@@ -53,9 +51,8 @@ const CreateAppointment: React.FC = () => {
   const route = useRoute();
   const routeParams = route.params as RouteParams;
 
-  const { user } = useAuth();
   const { addToast } = useToast();
-  const { goBack, navigate, reset } = useNavigation();
+  const { navigate, reset } = useNavigation();
   const [availability, setAvailability] = useState<AvailabilityItem[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -64,6 +61,17 @@ const CreateAppointment: React.FC = () => {
   const [selectedProvider, setSelectedProvider] = useState(
     routeParams.providerId,
   );
+  const [type, setType] = useState<'create' | 'update' | 'delete'>('create');
+  const [appointment_id, setAppointment_id] = useState(
+    routeParams.appointmentId,
+  );
+  useEffect(() => {
+    setSelectedProvider(routeParams.providerId);
+    setAppointment_id(routeParams.appointmentId);
+    if (routeParams.type) {
+      setType(routeParams.type);
+    }
+  }, [routeParams]);
 
   useEffect(() => {
     api.get('providers').then(response => {
@@ -84,10 +92,6 @@ const CreateAppointment: React.FC = () => {
         setAvailability(response.data);
       });
   }, [selectedDate, selectedProvider]);
-
-  const navigateBack = useCallback(() => {
-    goBack();
-  }, []);
 
   const handleToggleDatePicker = useCallback(() => {
     setShowDatePicker(state => !state);
@@ -121,10 +125,18 @@ const CreateAppointment: React.FC = () => {
       date.setHours(selectedHour);
       date.setMinutes(0);
 
-      await api.post('appointments', {
-        provider_id: selectedProvider,
-        date,
-      });
+      if (type === 'update') {
+        await api.put('appointments', {
+          appointment_id: appointment_id,
+          provider_id: selectedProvider,
+          date,
+        });
+      } else if (type === 'create') {
+        await api.post('appointments', {
+          provider_id: selectedProvider,
+          date,
+        });
+      }
 
       reset({
         routes: [
@@ -135,6 +147,7 @@ const CreateAppointment: React.FC = () => {
             name: 'AppointmentCreated',
             params: {
               date: date.getTime(),
+              type: type,
             },
           },
         ],
@@ -175,14 +188,7 @@ const CreateAppointment: React.FC = () => {
 
   return (
     <Container>
-      <Header>
-        <BackButton onPress={navigateBack}>
-          <Icon name="chevron-left" size={24} color="#999591" />
-        </BackButton>
-
-        <HeaderTitle>Cabelereiros</HeaderTitle>
-        <UserAvatar source={{ uri: user.avatar_url }} />
-      </Header>
+      <Header />
 
       <Content>
         <ProvidersListContainer>
@@ -268,6 +274,7 @@ const CreateAppointment: React.FC = () => {
           <CreateAppointmentButtonText>Agendar</CreateAppointmentButtonText>
         </CreateAppointmentButton>
       </Content>
+      <NavBar />
     </Container>
   );
 };

@@ -1,97 +1,114 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
-
-import { useAuth } from '../../hooks/Auth';
+import { format, parseISO } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+import Header from '../../components/Header';
 
 import {
   Container,
-  Header,
-  HeaderTitle,
-  UserName,
-  ProfileButton,
-  UserAvatar,
-  ProvidersList,
-  ProviderContainer,
+  AppointmentsList,
+  AppointmentContainer,
   ProviderAvatar,
-  ProviderInfo,
+  AppointmentInfo,
   ProviderName,
-  ProviderMeta,
-  ProviderMetaText,
-  ProvidersListTitle,
+  AppointmentMeta,
+  AppointmentMetaText,
+  AppointmentsListTitle,
 } from './styles';
 import api from '../../services/api';
+import NavBar from '../../components/NavBar';
 
-export interface Provider {
+interface Appointment {
+  id: string;
+  date: string;
+  provider: {
+    name: string;
+    avatar_url: string;
+  };
+}
+
+export interface AppointmentFormatted {
   id: string;
   name: string;
   avatar_url: string;
+  hourFormatted: string;
+  dayFormatted: string;
 }
 
 const Dashboard: React.FC = () => {
-  const [providers, setProviders] = useState<Provider[]>([]);
-
-  const { user } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const { navigate } = useNavigation();
 
   useEffect(() => {
-    api.get('providers').then(response => {
-      setProviders(response.data);
+    api.get('/appointments/user').then(response => {
+      setAppointments(response.data);
     });
   }, []);
 
-  const navigateToProfile = useCallback(() => {
-    navigate('Profile');
+  const navigateToProviderSelect = useCallback(() => {
+    navigate('ProviderSelect');
   }, [navigate]);
 
-  const navigateToCreateAppointment = useCallback(
-    (providerId: string) => {
-      navigate('CreateAppointment', { providerId });
+  const navigateToAppointment = useCallback(
+    (appointmentId: string) => {
+      navigate('Appointment', { appointmentId });
     },
     [navigate],
   );
 
+  const appointmentsFormated = useMemo(() => {
+    return appointments.map((appointment: Appointment) => {
+      const date = parseISO(appointment.date);
+
+      return {
+        id: appointment.id,
+        name: appointment.provider.name,
+        avatar_url: appointment.provider.avatar_url,
+        hourFormatted: format(date, 'HH:00'),
+        dayFormatted: format(date, 'EEEE, dd-MMM-yy', { locale: ptBR }),
+      };
+    });
+  }, [appointments]);
+
   return (
     <Container>
-      <Header>
-        <HeaderTitle>
-          Bem vindo, {'\n'}
-          <UserName>{user.name}</UserName>
-        </HeaderTitle>
+      <Header />
 
-        <ProfileButton onPress={navigateToProfile}>
-          <UserAvatar source={{ uri: user.avatar_url }} />
-        </ProfileButton>
-      </Header>
-
-      <ProvidersList
-        data={providers}
-        keyExtractor={provider => provider.id}
+      <AppointmentsList
+        data={appointmentsFormated}
+        keyExtractor={appointment => appointment.id}
         ListHeaderComponent={
-          <ProvidersListTitle>Cabelereiros</ProvidersListTitle>
+          <AppointmentsListTitle>Meus horários agendados</AppointmentsListTitle>
         }
-        renderItem={({ item: provider }) => (
-          <ProviderContainer
-            onPress={() => navigateToCreateAppointment(provider.id)}
+        renderItem={({ item: appointment }) => (
+          <AppointmentContainer
+            onPress={() => navigateToAppointment(appointment.id)}
           >
-            <ProviderAvatar source={{ uri: provider.avatar_url }} />
+            <ProviderAvatar source={{ uri: appointment.avatar_url }} />
 
-            <ProviderInfo>
-              <ProviderName>{provider.name}</ProviderName>
+            <AppointmentInfo>
+              <ProviderName>{appointment.name}</ProviderName>
 
-              <ProviderMeta>
+              <AppointmentMeta>
                 <Icon name="calendar" size={14} color="#ff9000" />
-                <ProviderMetaText>Segunda à Sexta</ProviderMetaText>
-              </ProviderMeta>
+                <AppointmentMetaText>
+                  {appointment.dayFormatted}
+                </AppointmentMetaText>
+              </AppointmentMeta>
 
-              <ProviderMeta>
+              <AppointmentMeta>
                 <Icon name="clock" size={14} color="#ff9000" />
-                <ProviderMetaText>08:00 às 18:00</ProviderMetaText>
-              </ProviderMeta>
-            </ProviderInfo>
-          </ProviderContainer>
+                <AppointmentMetaText>
+                  {appointment.hourFormatted}
+                </AppointmentMetaText>
+              </AppointmentMeta>
+            </AppointmentInfo>
+          </AppointmentContainer>
         )}
       />
+
+      <NavBar />
     </Container>
   );
 };

@@ -8,6 +8,10 @@ interface ContainerProps {
   hasDescription?: boolean;
 }
 
+interface TimeBarProps {
+  type?: 'success' | 'error' | 'info';
+}
+
 const toastTypeVariations = {
   info: css`
     background: #ebf8ff;
@@ -20,6 +24,20 @@ const toastTypeVariations = {
   error: css`
     background: #fddede;
     color: #c53030;
+  `,
+};
+
+const toastTypeVariationsColors = {
+  info: css`
+    background-color: #3172b7 /* linear-gradient(130deg, #4f8dd0, #3172b7) */;
+  `,
+
+  success: css`
+    background-color: #2e656a /* linear-gradient(130deg, #43949b, #2e656a) */;
+  `,
+
+  error: css`
+    background-color: #c53030 /* linear-gradient(130deg, #d55454, #c53030) */;
   `,
 };
 
@@ -43,6 +61,7 @@ const ContainerBefore = styled.View<ContainerProps>`
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
   flex-direction: row;
   margin-bottom: 8px;
+  overflow: hidden;
 
   ${props => toastTypeVariations[props.type || 'info']}
 
@@ -90,3 +109,14 @@ export const ToastText = styled.Text<ContainerProps>`
 export const ToastCloseButton = styled.TouchableOpacity`
   opacity: 0.6;
 `;
+
+const TimerBarBefore = styled.View<TimeBarProps>`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 5px;
+
+  ${props => toastTypeVariationsColors[props.type || 'info']}
+`;
+
+export const TimerBar = animated(TimerBarBefore);

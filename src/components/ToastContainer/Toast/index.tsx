@@ -8,9 +8,11 @@ import {
   ToastText,
   ToastIcon,
   ToastCloseIcon,
+  TimerBar,
 } from './styles';
 
 import { useToast } from '../../../hooks/toast';
+import { useSpring } from 'react-spring';
 
 export interface ToastMessage {
   id: number;
@@ -32,6 +34,12 @@ const icons = {
 
 const Toast: React.FC<ToastProps> = ({ message, style }) => {
   const { removeToast } = useToast();
+
+  const { life } = useSpring({
+    from: { life: 0 },
+    life: 100,
+    config: { duration: 3000 },
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,6 +68,14 @@ const Toast: React.FC<ToastProps> = ({ message, style }) => {
           <ToastText type={message.type}>{message.description}</ToastText>
         )}
       </ToastTextContainer>
+      <TimerBar
+        type={message.type}
+        style={{
+          width: life
+            .interpolate({ range: [0, 1], output: [0, 1] })
+            .interpolate(life => `${life}%`),
+        }}
+      />
       <ToastCloseButton>
         <ToastCloseIcon
           onPress={() => removeToast(message.id)}

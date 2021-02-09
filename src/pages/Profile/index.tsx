@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -25,9 +25,13 @@ import {
   FormStyled,
   UserAvatarButton,
   UserAvatar,
+  ButtonContainer,
   BackButton,
+  LogoutButton,
+  AnimatedDiv,
 } from './styles';
 import { useAuth } from '../../hooks/Auth';
+import { useSpring } from 'react-spring';
 
 interface ProfileFormData {
   name: string;
@@ -38,15 +42,34 @@ interface ProfileFormData {
 }
 
 const SignUp: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, signOut } = useAuth();
 
   const navigation = useNavigation();
   const formRef = useRef<FormHandles>(null);
+  const [isNameFilled, setIsNameFilled] = useState(false);
+  const [isEmailFilled, setIsEmailFilled] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [isPasswordFilled, setIsPasswordFilled] = useState(false);
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
   const confirmPasswordInputRef = useRef<TextInput>(null);
   const oldPasswordInputRef = useRef<TextInput>(null);
   const { addToast } = useToast();
+
+  useEffect(() => {
+    setIsNameFilled(!!formRef.current?.getFieldValue('name'));
+    setIsEmailFilled(!!formRef.current?.getFieldValue('email'));
+  }, []);
+
+  const handlePasswordInputFocus = useCallback(() => {
+    setIsPasswordFocused(true);
+  }, []);
+
+  const handlePasswordInputBlur = useCallback(() => {
+    setIsPasswordFocused(false);
+
+    setIsPasswordFilled(!!formRef.current?.getFieldValue('password'));
+  }, []);
 
   const handleProfile = useCallback(
     async (data: ProfileFormData) => {
@@ -139,6 +162,12 @@ const SignUp: React.FC = () => {
     navigation.goBack();
   }, [navigation]);
 
+  const { height, opacity } = useSpring({
+    from: { height: 0, opacity: 0 },
+    height: isPasswordFilled || isPasswordFocused ? 128 : 0,
+    opacity: isPasswordFilled || isPasswordFocused ? 1 : 0,
+  });
+
   return (
     <>
       <KeyboardAvoidingView
@@ -150,9 +179,14 @@ const SignUp: React.FC = () => {
           contentContainerStyle={{ flex: 1 }}
         >
           <Container>
-            <BackButton onPress={handleGoBack}>
-              <Icon name="chevron-left" size={24} color="#999591" />
-            </BackButton>
+            <ButtonContainer>
+              <BackButton onPress={handleGoBack}>
+                <Icon name="chevron-left" size={24} color="#999591" />
+              </BackButton>
+              <LogoutButton onPress={signOut}>
+                <Icon name="power" size={24} color="#999591" />
+              </LogoutButton>
+            </ButtonContainer>
 
             <UserAvatarButton onPress={() => {}}>
               <UserAvatar source={{ uri: user.avatar_url }} />
@@ -173,6 +207,7 @@ const SignUp: React.FC = () => {
                 icon="user"
                 placeholder="Nome"
                 returnKeyType="next"
+                filled={isNameFilled}
                 onSubmitEditing={() => {
                   emailInputRef.current?.focus();
                   handleProfile;
@@ -187,6 +222,7 @@ const SignUp: React.FC = () => {
                 icon="mail"
                 placeholder="E-mail"
                 returnKeyType="next"
+                filled={isEmailFilled}
                 onSubmitEditing={() => {
                   passwordInputRef.current?.focus();
                   handleProfile;
@@ -201,38 +237,52 @@ const SignUp: React.FC = () => {
                 placeholder="Nova senha"
                 textContentType="newPassword"
                 returnKeyType="next"
+                onFocus={handlePasswordInputFocus}
+                onBlur={handlePasswordInputBlur}
+                filled={isPasswordFilled}
+                focused={isPasswordFocused}
                 containerStyle={{ marginTop: 16 }}
                 onSubmitEditing={() => {
                   confirmPasswordInputRef.current?.focus();
                   handleProfile;
                 }}
               />
-              <Input
-                ref={confirmPasswordInputRef}
-                secureTextEntry
-                name="password_confirmation"
-                icon="lock"
-                placeholder="Confirmar nova senha"
-                textContentType="newPassword"
-                returnKeyType="send"
-                onSubmitEditing={() => {
-                  oldPasswordInputRef.current?.focus();
-                  handleProfile;
+              <AnimatedDiv
+                style={{
+                  height: height.interpolate({ range: [0, 1], output: [0, 1] }),
+                  opacity: opacity.interpolate({
+                    range: [0, 1],
+                    output: [0, 1],
+                  }),
                 }}
-              />
-              <Input
-                ref={oldPasswordInputRef}
-                secureTextEntry
-                name="old_password"
-                icon="lock"
-                placeholder="Senha atual"
-                textContentType="newPassword"
-                returnKeyType="next"
-                onSubmitEditing={() => {
-                  formRef.current?.submitForm();
-                  handleProfile;
-                }}
-              />
+              >
+                <Input
+                  ref={confirmPasswordInputRef}
+                  secureTextEntry
+                  name="password_confirmation"
+                  icon="lock"
+                  placeholder="Confirmar nova senha"
+                  textContentType="newPassword"
+                  returnKeyType="send"
+                  onSubmitEditing={() => {
+                    oldPasswordInputRef.current?.focus();
+                    handleProfile;
+                  }}
+                />
+                <Input
+                  ref={oldPasswordInputRef}
+                  secureTextEntry
+                  name="old_password"
+                  icon="lock"
+                  placeholder="Senha atual"
+                  textContentType="newPassword"
+                  returnKeyType="next"
+                  onSubmitEditing={() => {
+                    formRef.current?.submitForm();
+                    handleProfile;
+                  }}
+                />
+              </AnimatedDiv>
 
               <Button
                 onPress={() => {
