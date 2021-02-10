@@ -2,10 +2,13 @@ import React from 'react';
 
 import { ToastProvider } from './toast';
 import { AuthProvider } from './Auth';
+import { NotificationProvider } from './Notification';
 
 const AppProvider: React.FC = ({ children }) => (
   <AuthProvider>
-    <ToastProvider>{children}</ToastProvider>
+    <NotificationProvider>
+      <ToastProvider>{children}</ToastProvider>
+    </NotificationProvider>
   </AuthProvider>
 );
 

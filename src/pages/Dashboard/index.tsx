@@ -3,8 +3,8 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { format, parseISO } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
-import Header from '../../components/Header';
 
+import Header from '../../components/Header';
 import {
   Container,
   AppointmentsList,

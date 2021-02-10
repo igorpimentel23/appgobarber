@@ -3,8 +3,10 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
+
 import { useToast } from '../../hooks/toast';
 import Header from '../../components/Header';
+import { useNotification } from '../../hooks/Notification';
 
 import {
   Container,
@@ -51,6 +53,7 @@ const CreateAppointment: React.FC = () => {
   const route = useRoute();
   const routeParams = route.params as RouteParams;
 
+  const { handleScheduleNotification } = useNotification();
   const { addToast } = useToast();
   const { navigate, reset } = useNavigation();
   const [availability, setAvailability] = useState<AvailabilityItem[]>([]);
@@ -137,6 +140,17 @@ const CreateAppointment: React.FC = () => {
           date,
         });
       }
+
+      const formattedDate = format(
+        date,
+        "EEEE', dia' dd 'de' MMMM 'de' yyyy 'às' HH:mm'h'",
+      );
+
+      handleScheduleNotification(
+        'GoBarber',
+        `Seu agendamento de ${formattedDate} está próximo!`,
+        date,
+      );
 
       reset({
         routes: [
