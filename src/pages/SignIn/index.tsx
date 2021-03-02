@@ -27,8 +27,6 @@ import logoImg from '../../assets/logo.png';
 import {
   Container,
   Title,
-  ForgotPassword,
-  ForgotPasswordText,
   CreateAccountButton,
   CreateAccountButtonText,
   FormStyled,
@@ -146,10 +144,6 @@ const SignIn: React.FC = () => {
                 Entrar
               </Button>
             </FormStyled>
-
-            <ForgotPassword onPress={() => {}}>
-              <ForgotPasswordText>Esqueci minha senha</ForgotPasswordText>
-            </ForgotPassword>
           </Container>
         </ScrollView>
       </KeyboardAvoidingView>
